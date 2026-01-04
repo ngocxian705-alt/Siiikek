@@ -1,35 +1,33 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import jwt, datetime
+import requests
 
 app = Flask(__name__)
 CORS(app)
 
-SECRET = "thug4ff"
-
-@app.route("/")
-def home():
-    return "API OK"
-
 @app.route("/jwt")
-def jwt_api():
+def jwt():
     uid = request.args.get("uid")
     password = request.args.get("password")
 
     if not uid or not password:
-        return jsonify(error=True, msg="missing uid/password")
+        return jsonify({"error": "missing uid or password"}), 400
 
-    token = jwt.encode(
-        {"uid": uid, "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1)},
-        SECRET,
-        algorithm="HS256"
-    )
+    url = f"http://jwt.thug4ff.com/token?uid={uid}&password={password}"
 
-    return jsonify({
-        "uid": uid,
-        "server": "VN",
-        "token": token
-    })
+    try:
+        r = requests.get(url, timeout=10)
+        data = r.json()
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+        # ❌ XÓA CREDIT Ở ĐÂY
+        if isinstance(data, dict) and "credit" in data:
+            del data["credit"]
+
+        return jsonify(data)
+
+    except Exception as e:
+        return jsonify({"error": "api_failed", "detail": str(e)}), 500
+
+app.run(host="0.0.0.0", port=5000)
+
+10000)
